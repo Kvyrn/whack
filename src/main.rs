@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 
-use tracing::{info, Level};
+use tracing::Level;
 use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::util::SubscriberInitExt;
 
@@ -14,10 +14,10 @@ async fn main() -> Result<()> {
 
 fn setup_tracing() -> Result<()> {
     let subscriber = tracing_subscriber::fmt()
-    .with_max_level(Level::TRACE)
-    .with_thread_names(true)
-    .with_span_events(FmtSpan::FULL)
-    .finish();
+        .with_max_level(Level::TRACE)
+        .with_thread_names(true)
+        .with_span_events(FmtSpan::FULL)
+        .finish();
     subscriber.init();
     Ok(())
 }

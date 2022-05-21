@@ -1,13 +1,13 @@
 pub mod server_handle;
 
-use std::collections::HashMap;
 use anyhow::{anyhow, Result};
+use std::collections::HashMap;
 
+use crate::servers::server_handle::ServerHandle;
 use tokio::sync::mpsc::UnboundedSender;
 use tokio::sync::OnceCell;
 use tracing::{info, info_span};
 use uuid::Uuid;
-use crate::servers::server_handle::ServerHandle;
 
 static COMMAND_SENDER: OnceCell<UnboundedSender<ServerCommand>> = OnceCell::const_new();
 
@@ -25,10 +25,9 @@ pub fn init() -> Result<()> {
                 ServerCommand::StartServer(id) => {
                     if running_servers.contains_key(&id) {
                         info!("Server already running!");
-                        return
+                        return;
                     }
                     info!("Starting server");
-                    running_servers.insert(id, ServerHandle { id });
                 }
                 ServerCommand::RestartServer(id) => {
                     info!("Restarting server");

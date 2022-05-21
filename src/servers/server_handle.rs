@@ -5,12 +5,12 @@ use uuid::Uuid;
 #[derive(Debug)]
 pub struct ServerHandle {
     pub id: Uuid,
-    //stdout: LineCache,
-    //stdin: Sender<String>,
+    stdout: LineCache,
+    stdin: Sender<String>,
 }
 
 impl ServerHandle {
-    /*fn stdin(&self) -> Sender<String> {
+    fn stdin(&self) -> Sender<String> {
         self.stdin.clone()
-    }*/
+    }
 }

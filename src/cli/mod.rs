@@ -1,7 +1,10 @@
 use anyhow::Result;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, Interest};
+use tokio::net::unix::UCred;
 use tokio::net::{UnixListener, UnixStream};
 use tracing::{error, info, info_span, warn};
+
+mod executor;
 
 pub fn init() -> Result<()> {
     let listener = UnixListener::bind("/tmp/whack.sock")?;
@@ -57,10 +60,27 @@ async fn handle_client(mut stream: UnixStream) -> Result<()> {
             break;
         }
 
-        let _ = writer.write(line.as_bytes()).await;
+        if let Some(reply) = executor::on_command(line.trim(), peer_cred.into()).await {
+            let _ = writer.write_all(reply.as_bytes());
+        }
     }
 
     info!("Connection closed");
 
     Ok(())
+}
+
+#[derive(Debug)]
+pub struct ClientProperties {
+    pub uid: u32,
+    pub gid: u32,
+}
+
+impl From<UCred> for ClientProperties {
+    fn from(cred: UCred) -> Self {
+        Self {
+            uid: cred.uid(),
+            gid: cred.gid(),
+        }
+    }
 }

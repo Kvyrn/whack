@@ -20,11 +20,8 @@ pub fn init() -> Result<()> {
                     info!("Accepted cli connection!");
 
                     tokio::spawn(async move {
-                        match handle_client(stream).await {
-                            Ok(_) => {}
-                            Err(err) => {
-                                error!(?err, "Error handling client");
-                            }
+                        if let Err(err) = handle_client(stream).await {
+                            error!(?err, "Error handling client");
                         }
                     });
                 }

@@ -5,6 +5,7 @@ use tokio::net::{UnixListener, UnixStream};
 use tracing::{debug, error, info, info_span, warn};
 
 mod executor;
+mod parser;
 
 pub fn init() -> Result<()> {
     let listener = UnixListener::bind("/tmp/whack.sock")?;
@@ -57,23 +58,21 @@ async fn handle_client(mut stream: UnixStream) -> Result<()> {
             break;
         }
 
-        match executor::on_command(line.trim(), peer_cred.into()).await {
+        match executor::on_command(line.trim().to_string(), peer_cred.into()) {
             Ok(reply) => {
                 if let Some(reply) = reply {
                     if let Err(write_err) = writer.write_all(reply.as_bytes()).await {
                         debug!(?write_err, "Error writing to stream!");
                     }
                 }
-            },
+            }
             Err(err) => {
                 warn!(?err, "Error handling command!");
-                if let Err(write_err) = writer.write_all("err".as_bytes()).await {
+                if let Err(write_err) = writer.write_all("err\n".as_bytes()).await {
                     debug!(?write_err, "Error writing to stream!");
                 }
             }
         }
-
-
     }
 
     info!("Connection closed");

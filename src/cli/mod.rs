@@ -2,7 +2,7 @@ use anyhow::Result;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, Interest};
 use tokio::net::unix::UCred;
 use tokio::net::{UnixListener, UnixStream};
-use tracing::{debug, error, info, info_span, warn};
+use tracing::{debug, error, info, info_span, Instrument, warn};
 
 mod executor;
 mod parser;
@@ -21,8 +21,8 @@ pub fn init() -> Result<()> {
                     info!("Accepted cli connection!");
 
                     tokio::spawn(async move {
-                        if let Err(err) = handle_client(stream).await {
-                            error!(?err, "Error handling client");
+                        if let Err(err) = prep_client(stream).await {
+                            error!(?err, ?address, "Error handling client");
                         }
                     });
                 }
@@ -35,15 +35,20 @@ pub fn init() -> Result<()> {
     Ok(())
 }
 
-async fn handle_client(mut stream: UnixStream) -> Result<()> {
+async fn prep_client(stream: UnixStream) -> Result<()> {
     stream
         .ready(Interest::READABLE | Interest::WRITABLE)
         .await?;
     let peer_cred = stream.peer_cred()?;
 
     let span = info_span!("handle_client", ?peer_cred);
-    let _e = span.enter();
 
+    handle_client(stream, peer_cred).instrument(span).await?;
+
+    Ok(())
+}
+
+async fn handle_client(mut stream: UnixStream, peer_cred: UCred) -> Result<()> {
     let (reader, mut writer) = stream.split();
     let mut reader = BufReader::new(reader);
 

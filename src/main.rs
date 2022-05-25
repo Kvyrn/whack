@@ -8,7 +8,7 @@ use tracing::{error, info, Level};
 use tracing_subscriber::util::SubscriberInitExt;
 use uuid::uuid;
 
-use crate::servers::ServerCommand;
+use crate::servers::command::ServerCommand;
 
 mod cli;
 mod servers;

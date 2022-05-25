@@ -1,6 +1,6 @@
+pub mod command;
 pub mod server_handle;
 pub mod server_info;
-mod command;
 
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;

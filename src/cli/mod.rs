@@ -2,7 +2,7 @@ use anyhow::Result;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, Interest};
 use tokio::net::unix::UCred;
 use tokio::net::{UnixListener, UnixStream};
-use tracing::{debug, error, info, info_span, Instrument, warn};
+use tracing::{debug, error, info, info_span, warn, Instrument};
 
 mod executor;
 mod parser;

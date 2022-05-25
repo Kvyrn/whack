@@ -1,9 +1,13 @@
 #![warn(missing_debug_implementations, rust_2018_idioms)]
 #![allow(clippy::redundant_field_names)]
 
+use std::fs::File;
+use std::io::Read;
 use anyhow::{Context, Result};
+use serde::{Deserialize, Serialize};
 use tokio::select;
 use tokio::signal::unix::{signal, SignalKind};
+use tokio::sync::OnceCell;
 use tracing::{error, info, Level};
 use tracing_subscriber::util::SubscriberInitExt;
 use uuid::uuid;
@@ -14,9 +18,13 @@ mod cli;
 mod servers;
 mod util;
 
+pub static CONFIG: OnceCell<WhackConfig> = OnceCell::const_new();
+
 #[tokio::main]
 async fn main() -> Result<()> {
     setup_tracing()?;
+
+    load_config().context("Error loading config!")?;
 
     servers::init().context("Error initialising servers!")?;
     cli::init().context("Error initialising cli!")?;
@@ -53,5 +61,21 @@ fn setup_tracing() -> Result<()> {
         //.with_span_events(FmtSpan::FULL)
         .finish();
     subscriber.init();
+    Ok(())
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WhackConfig {
+    pub admin_gid: u32,
+}
+
+fn load_config() -> Result<()> {
+    let mut file = File::open("whack.toml")?;
+    let mut file_content = String::new();
+    file.read_to_string(&mut file_content)?;
+    let config: WhackConfig = toml::from_str(file_content.as_str())?;
+
+    CONFIG.set(config)?;
+
     Ok(())
 }

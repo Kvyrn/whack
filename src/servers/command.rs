@@ -1,5 +1,4 @@
 use crate::servers::server_handle::ServerHandle;
-use crate::ServerCommand;
 use std::collections::HashMap;
 use tracing::info;
 use uuid::Uuid;
@@ -25,4 +24,12 @@ pub async fn handle_server_command(
             info!("Stopping server");
         }
     }
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone)]
+pub enum ServerCommand {
+    StartServer(Uuid),
+    RestartServer(Uuid),
+    StopServer(Uuid),
 }

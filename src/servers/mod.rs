@@ -10,7 +10,7 @@ use tokio::sync::mpsc::UnboundedSender;
 use tokio::sync::OnceCell;
 use tracing::{info_span, Instrument};
 use uuid::Uuid;
-use crate::servers::command::handle_server_command;
+use crate::servers::command::{handle_server_command, ServerCommand};
 
 static COMMAND_SENDER: OnceCell<UnboundedSender<ServerCommand>> = OnceCell::const_new();
 
@@ -34,12 +34,4 @@ pub fn get_command_sender() -> Result<UnboundedSender<ServerCommand>> {
         .get()
         .ok_or_else(|| anyhow!("Server not initialized!"))
         .cloned()
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
-pub enum ServerCommand {
-    StartServer(Uuid),
-    RestartServer(Uuid),
-    StopServer(Uuid),
 }

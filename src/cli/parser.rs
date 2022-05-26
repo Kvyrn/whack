@@ -4,7 +4,7 @@ use nom::character::complete::multispace0;
 use nom::sequence::terminated;
 use nom::IResult;
 
-pub fn parse_command(input: &str) -> Result<(&str, &str)> {
+pub fn get_command_name(input: &str) -> Result<(&str, &str)> {
     let result: IResult<&str, &str, nom::error::Error<&str>> =
         terminated(take_till(|c: char| c.is_whitespace()), multispace0)(input);
     match result {

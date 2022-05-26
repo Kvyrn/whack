@@ -1,4 +1,4 @@
-use crate::cli::parser::parse_command;
+use crate::cli::parser::get_command_name;
 use crate::cli::ClientProperties;
 use anyhow::Result;
 use tracing::{info, info_span};
@@ -14,7 +14,7 @@ pub fn on_command(input: String, _props: ClientProperties) -> Result<Option<Stri
     let _e = span.enter();
 
     let input_str = input.as_str();
-    let (payload, command) = parse_command(input_str)?;
+    let (payload, command) = get_command_name(input_str)?;
     info!("{:?}, {:?}", command, payload);
     Ok(None)
 }

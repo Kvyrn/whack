@@ -1,4 +1,5 @@
 pub mod command;
+pub mod processes;
 pub mod server_handle;
 pub mod server_info;
 

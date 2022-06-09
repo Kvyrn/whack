@@ -1,10 +1,10 @@
 #![warn(missing_debug_implementations, rust_2018_idioms)]
 #![allow(clippy::redundant_field_names)]
 
-use std::fs::File;
-use std::io::Read;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::Read;
 use tokio::select;
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::OnceCell;
@@ -33,6 +33,8 @@ async fn main() -> Result<()> {
     sender.send(ServerCommand::StartServer(uuid!(
         "8d7d8cfd-5e77-4cbb-8108-0e36c7201f42"
     )))?;
+
+    servers::processes::spawn_server(uuid!("2b7c54a5-3636-4e9a-a040-109472087c25"));
 
     // exit on SIGINT or SIGTERM
     let mut sigint = signal(SignalKind::interrupt())?;

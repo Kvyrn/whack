@@ -34,8 +34,6 @@ async fn main() -> Result<()> {
         "8d7d8cfd-5e77-4cbb-8108-0e36c7201f42"
     )))?;
 
-    servers::processes::spawn_server(uuid!("2b7c54a5-3636-4e9a-a040-109472087c25"));
-
     // exit on SIGINT or SIGTERM
     let mut sigint = signal(SignalKind::interrupt())?;
     let mut sigterm = signal(SignalKind::terminate())?;

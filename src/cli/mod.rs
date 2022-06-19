@@ -8,16 +8,21 @@ mod executor;
 mod parser;
 
 pub fn init() -> Result<()> {
+    let _e = info_span!("init_cli").entered();
+
     let listener = UnixListener::bind("/tmp/whack.sock")?;
     info!("Opened socket at /tmp/whack.sock");
 
-    tokio::spawn(async move {
-        loop {
+    tokio::spawn(listen(listener));
+    Ok(())
+}
+
+async fn listen(listener: UnixListener) {
+    loop {
             match listener.accept().await {
                 Ok((stream, address)) => {
                     let peer_cred = stream.peer_cred();
-                    let span = info_span!("cli_connection", ?peer_cred, ?address);
-                    let _e = span.enter();
+                    let _e = info_span!("cli_connection", ?peer_cred, ?address).entered();
                     info!("Accepted cli connection!");
 
                     tokio::spawn(async move {
@@ -31,8 +36,6 @@ pub fn init() -> Result<()> {
                 }
             }
         }
-    });
-    Ok(())
 }
 
 async fn prep_client(stream: UnixStream) -> Result<()> {

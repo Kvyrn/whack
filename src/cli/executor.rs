@@ -10,8 +10,7 @@ create-server                               ->  ok 6a16edc7-02f6-4f9c-b7df-07ae4
  */
 
 pub fn on_command(input: String, _props: ClientProperties) -> Result<Option<String>> {
-    let span = info_span!("on_command", ?input);
-    let _e = span.enter();
+    let _e = info_span!("on_command", ?input).entered();
 
     let input_str = input.as_str();
     let (payload, command) = get_command_name(input_str)?;

@@ -19,6 +19,7 @@ mod servers;
 mod util;
 
 pub static CONFIG: OnceCell<WhackConfig> = OnceCell::const_new();
+pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 #[tokio::main]
 async fn main() -> Result<()> {

@@ -1,14 +1,23 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, Interest};
 use tokio::net::unix::UCred;
 use tokio::net::{UnixListener, UnixStream};
+use tokio::sync::OnceCell;
 use tracing::{debug, error, info, info_span, warn, Instrument};
+use yogurt::Dispatcher;
+use crate::cli::commands::create_dispatcher;
 
-mod executor;
-mod parser;
+mod commands;
+
+static DISPATCHER: OnceCell<Dispatcher<Option<ClientProperties>, Option<String>, ()>> =
+    OnceCell::const_new();
 
 pub fn init() -> Result<()> {
     let _e = info_span!("init_cli").entered();
+
+    DISPATCHER
+        .set(create_dispatcher()?)
+        .map_err(|_| anyhow!("Error setting dispatcher!"))?;
 
     let listener = UnixListener::bind("/tmp/whack.sock")?;
     info!("Opened socket at /tmp/whack.sock");
@@ -19,23 +28,23 @@ pub fn init() -> Result<()> {
 
 async fn listen(listener: UnixListener) {
     loop {
-            match listener.accept().await {
-                Ok((stream, address)) => {
-                    let peer_cred = stream.peer_cred();
-                    let _e = info_span!("cli_connection", ?peer_cred, ?address).entered();
-                    info!("Accepted cli connection!");
+        match listener.accept().await {
+            Ok((stream, address)) => {
+                let peer_cred = stream.peer_cred();
+                let _e = info_span!("cli_connection", ?peer_cred, ?address).entered();
+                info!("Accepted cli connection!");
 
-                    tokio::spawn(async move {
-                        if let Err(err) = prep_client(stream).await {
-                            error!(?err, ?address, "Error handling client");
-                        }
-                    });
-                }
-                Err(err) => {
-                    error!(?err, "Failed to accept connection!");
-                }
+                tokio::spawn(async move {
+                    if let Err(err) = prep_client(stream).await {
+                        error!(?err, ?address, "Error handling client");
+                    }
+                });
+            }
+            Err(err) => {
+                error!(?err, "Failed to accept connection!");
             }
         }
+    }
 }
 
 async fn prep_client(stream: UnixStream) -> Result<()> {
@@ -59,18 +68,28 @@ async fn handle_client(mut stream: UnixStream, peer_cred: UCred) -> Result<()> {
         let mut line = String::new();
         let result = reader.read_line(&mut line).await;
         if result.is_err() {
-            warn!("Invalid data received!");
+            warn!(err = ?result.unwrap_err(), "Invalid data received!");
             continue;
         } else if result? < 1 {
             // connection closed
             break;
         }
 
-        match executor::on_command(line.trim().to_string(), peer_cred.into()) {
-            Ok(reply) => {
-                if let Some(reply) = reply {
-                    if let Err(write_err) = writer.write_all(reply.as_bytes()).await {
-                        debug!(?write_err, "Error writing to stream!");
+        debug!(command = ?line, "Executing command");
+
+        let dispatcher = DISPATCHER.get().ok_or(anyhow!("Missing dispatcher!"))?;
+
+        let client_props: ClientProperties = peer_cred.into();
+        let replies = dispatcher
+            .run_command_in_context(line.as_str(), Box::new(move |_| Some(client_props.clone())));
+
+        match replies {
+            Ok(replies) => {
+                for reply in replies {
+                    if let Some(reply) = reply {
+                        if let Err(write_err) = writer.write_all(reply.as_bytes()).await {
+                            debug!(?write_err, "Error writing to stream!");
+                        }
                     }
                 }
             }
@@ -84,11 +103,10 @@ async fn handle_client(mut stream: UnixStream, peer_cred: UCred) -> Result<()> {
     }
 
     info!("Connection closed");
-
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ClientProperties {
     pub uid: u32,
     pub gid: u32,

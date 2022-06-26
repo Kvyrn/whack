@@ -1,6 +1,6 @@
-use yogurt::{Command, Dispatcher, ExecContext};
 use crate::cli::ClientProperties;
 use yogurt::Result;
+use yogurt::{Command, Dispatcher, ExecContext};
 
 type Ctx = ExecContext<Option<ClientProperties>>;
 

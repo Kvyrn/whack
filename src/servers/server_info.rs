@@ -12,7 +12,7 @@ impl ServerInfo {
         Ok(ServerInfo {
             id: uuid!("37e7a7c5-4d57-4b79-b10f-851f18b22d70"),
             name: String::from("dgsdgf"),
-            exec_str: String::from("echo hello")
+            exec_str: String::from("echo hello"),
         })
     }
 

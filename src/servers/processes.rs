@@ -45,7 +45,6 @@ async fn handle_server(id: Uuid, mut receiver: UnboundedReceiver<ProcCommand>) -
             .ok_or_else(|| anyhow!("Server has no stdout handle!"))?,
     );
 
-
     loop {
         let mut line = String::new();
         select! {
@@ -61,7 +60,7 @@ async fn handle_server(id: Uuid, mut receiver: UnboundedReceiver<ProcCommand>) -
                 break;
             }
         };
-    };
+    }
 
     Ok(())
 }

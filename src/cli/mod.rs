@@ -1,3 +1,4 @@
+use crate::cli::commands::create_dispatcher;
 use anyhow::{anyhow, Result};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, Interest};
 use tokio::net::unix::UCred;
@@ -5,7 +6,6 @@ use tokio::net::{UnixListener, UnixStream};
 use tokio::sync::OnceCell;
 use tracing::{debug, error, info, info_span, warn, Instrument};
 use yogurt::Dispatcher;
-use crate::cli::commands::create_dispatcher;
 
 mod commands;
 

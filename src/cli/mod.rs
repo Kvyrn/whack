@@ -77,7 +77,7 @@ async fn handle_client(mut stream: UnixStream, peer_cred: UCred) -> Result<()> {
 
         debug!(command = ?line, "Executing command");
 
-        let dispatcher = DISPATCHER.get().ok_or(anyhow!("Missing dispatcher!"))?;
+        let dispatcher = DISPATCHER.get().ok_or_else(|| anyhow!("Missing dispatcher!"))?;
 
         let client_props: ClientProperties = peer_cred.into();
         let replies = dispatcher
@@ -85,11 +85,9 @@ async fn handle_client(mut stream: UnixStream, peer_cred: UCred) -> Result<()> {
 
         match replies {
             Ok(replies) => {
-                for reply in replies {
-                    if let Some(reply) = reply {
-                        if let Err(write_err) = writer.write_all(reply.as_bytes()).await {
-                            debug!(?write_err, "Error writing to stream!");
-                        }
+                for reply in replies.into_iter().flatten() {
+                    if let Err(write_err) = writer.write_all(reply.as_bytes()).await {
+                        debug!(?write_err, "Error writing to stream!");
                     }
                 }
             }

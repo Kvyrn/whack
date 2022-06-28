@@ -4,7 +4,7 @@ use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{ChildStderr, ChildStdout, Command};
 use tokio::select;
-use tracing::{error, info, info_span, trace, warn, Instrument};
+use tracing::{error, info, info_span, trace, warn, Instrument, debug};
 
 pub fn spawn_server(server_info: ServerInfo) -> Result<()> {
     tokio::spawn(async move {
@@ -58,7 +58,7 @@ async fn read_stdout(stdout: ChildStdout, stderr: ChildStderr) {
             res = stdout_reader.read_line(&mut line) => {
                 match res {
                     Ok(n) if n > 0 => {
-                        trace!("Stdout: {:?}", line);
+                        debug!("Stdout: {:?}", line);
                     },
                     Err(err) => {
                         warn!(?err, "Invalid data received from child stdout")
@@ -71,7 +71,7 @@ async fn read_stdout(stdout: ChildStdout, stderr: ChildStderr) {
             res = stderr_reader.read_line(&mut err_line) => {
                 match res {
                     Ok(n) if n > 0 => {
-                        trace!("Stderr: {:?}", err_line);
+                        debug!("Stderr: {:?}", err_line);
                     },
                     Err(err) => {
                         warn!(?err, "Invalid data received from child stdout")

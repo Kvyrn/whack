@@ -16,7 +16,15 @@ impl ServerInfo {
         })
     }
 
-    pub fn get_exec_str(&self) -> String {
-        self.exec_str.clone()
+    pub fn new(id: Uuid, name: String, exec_str: String) -> Self {
+        ServerInfo { id, name, exec_str }
+    }
+
+    pub fn get_exec_str(&self) -> &str {
+        self.exec_str.as_str()
+    }
+
+    pub fn uuid(&self) -> &Uuid {
+        &self.id
     }
 }

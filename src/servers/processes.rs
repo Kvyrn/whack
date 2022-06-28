@@ -1,72 +1,86 @@
-use std::process::Stdio;
-
-use anyhow::{anyhow, Context, Result};
-use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio::process::Command;
-use tokio::select;
-use tokio::signal::unix::SignalKind;
-use tokio::sync::mpsc::UnboundedReceiver;
-use tracing::{debug, error, info, info_span, Instrument};
-use uuid::Uuid;
-
-use crate::servers::server_handle::ServerHandle;
 use crate::servers::server_info::ServerInfo;
+use anyhow::{anyhow, Context, Result};
+use std::process::Stdio;
+use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::process::{ChildStderr, ChildStdout, Command};
+use tokio::select;
+use tracing::{error, info, info_span, trace, warn, Instrument};
 
-pub fn spawn_server(id: Uuid) {
-    let (sender, receiver) = tokio::sync::mpsc::unbounded_channel::<ProcCommand>();
-
+pub fn spawn_server(server_info: ServerInfo) -> Result<()> {
     tokio::spawn(async move {
-        let span = info_span!("handle_server", ?id);
-        if let Err(err) = handle_server(id, receiver).instrument(span).await {
-            error!(?err, "Error handling server!")
+        let span = info_span!("run_server", id = ?server_info.uuid());
+        let result = run_server(server_info).instrument(span).await;
+        if let Err(err) = result {
+            error!(?err, "Error running server!")
         }
     });
+    Ok(())
 }
 
-async fn handle_server(id: Uuid, mut receiver: UnboundedReceiver<ProcCommand>) -> Result<()> {
-    let info = ServerInfo::fetch(id).unwrap();
-    let exec = info.get_exec_str();
-    let exec_str = exec.as_str();
-    let args: Vec<String> = shell_words::split(exec_str).context("Invalid exec string")?;
-    let program = args.first().ok_or_else(|| anyhow!("Invalid exec string"))?;
+async fn run_server(server_info: ServerInfo) -> Result<()> {
+    let args: Vec<_> =
+        shell_words::split(server_info.get_exec_str()).context("Invalid exec string")?;
+    let mut command = Command::new(args.first().ok_or_else(|| anyhow!("Invalid exec string"))?);
+    command
+        .args(&args[1..])
+        .stderr(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stdin(Stdio::piped());
 
-    let mut command = Command::new(program);
-    command.args(&args[1..]);
-    command.stdin(Stdio::piped());
-    command.stdout(Stdio::piped());
-    command.stderr(Stdio::piped());
+    let mut child = command.spawn().context("Error spawning child process")?;
 
-    let mut child = command.spawn().context("Error spawning server process")?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| anyhow!("Missing child stdout!"))?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| anyhow!("Missing child stdout!"))?;
+    tokio::spawn(read_stdout(stdout, stderr).in_current_span());
 
-    let mut stdout_reader = BufReader::new(
-        child
-            .stdout
-            .take()
-            .ok_or_else(|| anyhow!("Server has no stdout handle!"))?,
-    );
-
-    loop {
-        let mut line = String::new();
-        select! {
-            res = stdout_reader.read_line(&mut line) => {
-                let line = line.trim();
-                info!("stdout: {line}, {res:?}");
-            },
-            Some(cmd) = receiver.recv() => {
-                info!("receiver: {cmd:?}");
-            },
-            exit = child.wait() => {
-                info!("exit: {exit:?}");
-                break;
-            }
-        };
-    }
+    child.wait().await?;
+    info!("Child exited!");
 
     Ok(())
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum ProcCommand {
-    Signal(SignalKind),
-    RunCommand(String),
+async fn read_stdout(stdout: ChildStdout, stderr: ChildStderr) {
+    let mut stdout_reader = BufReader::new(stdout);
+    let mut stderr_reader = BufReader::new(stderr);
+
+    let mut stdout_open = true;
+    let mut stderr_open = true;
+    while stdout_open || stderr_open {
+        let mut line = String::new();
+        let mut err_line = String::new();
+        select! {
+            res = stdout_reader.read_line(&mut line) => {
+                match res {
+                    Ok(n) if n > 0 => {
+                        trace!("Stdout: {:?}", line);
+                    },
+                    Err(err) => {
+                        warn!(?err, "Invalid data received from child stdout")
+                    },
+                    _ => {
+                        stdout_open = false;
+                    }
+                }
+            },
+            res = stderr_reader.read_line(&mut err_line) => {
+                match res {
+                    Ok(n) if n > 0 => {
+                        trace!("Stderr: {:?}", err_line);
+                    },
+                    Err(err) => {
+                        warn!(?err, "Invalid data received from child stdout")
+                    },
+                    _ => {
+                        stderr_open = false;
+                    }
+                }
+            }
+        }
+    }
 }

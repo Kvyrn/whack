@@ -10,9 +10,10 @@ use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::OnceCell;
 use tracing::{error, info, Level};
 use tracing_subscriber::util::SubscriberInitExt;
-use uuid::uuid;
+use uuid::{uuid, Uuid};
 
 use crate::servers::command::ServerCommand;
+use crate::servers::server_info::ServerInfo;
 
 mod cli;
 mod servers;
@@ -33,6 +34,12 @@ async fn main() -> Result<()> {
     sender.send(ServerCommand::StartServer(uuid!(
         "8d7d8cfd-5e77-4cbb-8108-0e36c7201f42"
     )))?;
+
+    servers::processes::spawn_server(ServerInfo::new(
+        Uuid::new_v4(),
+        "epic name".to_string(),
+        "ls a .".to_string(),
+    ))?;
 
     // exit on SIGINT or SIGTERM
     let mut sigint = signal(SignalKind::interrupt())?;

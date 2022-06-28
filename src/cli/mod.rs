@@ -77,7 +77,9 @@ async fn handle_client(mut stream: UnixStream, peer_cred: UCred) -> Result<()> {
 
         debug!(command = ?line, "Executing command");
 
-        let dispatcher = DISPATCHER.get().ok_or_else(|| anyhow!("Missing dispatcher!"))?;
+        let dispatcher = DISPATCHER
+            .get()
+            .ok_or_else(|| anyhow!("Missing dispatcher!"))?;
 
         let client_props: ClientProperties = peer_cred.into();
         let replies = dispatcher

@@ -4,11 +4,11 @@ use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{ChildStderr, ChildStdout, Command};
 use tokio::select;
-use tracing::{error, info, info_span, warn, Instrument};
-#[cfg(not(debug_assertions))]
-use tracing::trace as line_log;
 #[cfg(debug_assertions)]
 use tracing::debug as line_log;
+#[cfg(not(debug_assertions))]
+use tracing::trace as line_log;
+use tracing::{error, info, info_span, warn, Instrument};
 
 pub fn spawn_server(server_info: ServerInfo) -> Result<()> {
     tokio::spawn(async move {

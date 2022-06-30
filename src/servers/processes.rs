@@ -1,9 +1,10 @@
 use crate::servers::server_info::ServerInfo;
 use anyhow::{anyhow, Context, Result};
 use std::process::Stdio;
-use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio::process::{ChildStderr, ChildStdout, Command};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::process::{ChildStderr, ChildStdin, ChildStdout, Command};
 use tokio::select;
+use tokio::sync::mpsc::UnboundedReceiver;
 #[cfg(debug_assertions)]
 use tracing::debug as line_log;
 #[cfg(not(debug_assertions))]
@@ -11,9 +12,13 @@ use tracing::trace as line_log;
 use tracing::{error, info, info_span, warn, Instrument};
 
 pub fn spawn_server(server_info: ServerInfo) -> Result<()> {
+    let (input_sender, input_receiver) = tokio::sync::mpsc::unbounded_channel::<String>();
+
     tokio::spawn(async move {
         let span = info_span!("run_server", id = ?server_info.uuid());
-        let result = run_server(server_info).instrument(span).await;
+        let result = run_server(server_info, input_receiver)
+            .instrument(span)
+            .await;
         if let Err(err) = result {
             error!(?err, "Error running server!")
         }
@@ -21,7 +26,10 @@ pub fn spawn_server(server_info: ServerInfo) -> Result<()> {
     Ok(())
 }
 
-async fn run_server(server_info: ServerInfo) -> Result<()> {
+async fn run_server(
+    server_info: ServerInfo,
+    input_receiver: UnboundedReceiver<String>,
+) -> Result<()> {
     let args: Vec<_> =
         shell_words::split(server_info.get_exec_str()).context("Invalid exec string")?;
     let mut command = Command::new(args.first().ok_or_else(|| anyhow!("Invalid exec string"))?);
@@ -40,13 +48,28 @@ async fn run_server(server_info: ServerInfo) -> Result<()> {
     let stderr = child
         .stderr
         .take()
-        .ok_or_else(|| anyhow!("Missing child stdout!"))?;
+        .ok_or_else(|| anyhow!("Missing child stderr!"))?;
+    let stdin = child
+        .stdin
+        .take()
+        .ok_or_else(|| anyhow!("Missing child stdin!"))?;
     tokio::spawn(read_stdout(stdout, stderr).in_current_span());
+    tokio::spawn(write_stdin(stdin, input_receiver).in_current_span());
 
     child.wait().await?;
     info!("Child exited!");
 
     Ok(())
+}
+
+async fn write_stdin(mut stdin: ChildStdin, mut receiver: UnboundedReceiver<String>) {
+    while let Some(command) = receiver.recv().await {
+        if let Err(err) = stdin.write_all(command.as_bytes()).await {
+            warn!(?err, "Error writing to child stdin!");
+        } else {
+            line_log!("Stdin: {:?}", command);
+        }
+    }
 }
 
 async fn read_stdout(stdout: ChildStdout, stderr: ChildStderr) {

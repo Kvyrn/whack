@@ -5,9 +5,11 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::Read;
+use std::time::Duration;
 use tokio::select;
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::OnceCell;
+use tokio::time::sleep;
 use tracing::{error, info, Level};
 use tracing_subscriber::util::SubscriberInitExt;
 use uuid::{uuid, Uuid};
@@ -35,7 +37,7 @@ async fn main() -> Result<()> {
         "8d7d8cfd-5e77-4cbb-8108-0e36c7201f42"
     )))?;
 
-    servers::processes::spawn_server(ServerInfo::new(
+    let _handle = servers::processes::spawn_server(ServerInfo::new(
         Uuid::new_v4(),
         "epic name".to_string(),
         "ls a .".to_string(),

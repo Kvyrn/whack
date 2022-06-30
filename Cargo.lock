@@ -99,6 +99,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "log_buffer"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f033173c9486b7fe97a79c895c0a3483ae395ab6744c985d10078950e2492419"
+
+[[package]]
 name = "memchr"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -428,6 +434,7 @@ name = "whack"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "log_buffer",
  "parking_lot",
  "serde",
  "shell-words",

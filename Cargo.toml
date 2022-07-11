@@ -11,10 +11,10 @@ tokio = { version = "1.19.2", features = ["full"] }
 parking_lot = "0.12.1"
 uuid = { version = "1.1.2", features = ["serde", "v4"] }
 serde = { version = "1.0.137", features = ["derive"] }
-toml = "0.5.9"
 shell-words = "1.1.0"
 yogurt = "0.3.1"
 log_buffer = "1.2.0"
+figment = { version = "0.10.6", features = ["toml", "env"] }
 
 tracing = "0.1.35"
 tracing-subscriber = { version = "0.3.11", features = ["parking_lot"] }

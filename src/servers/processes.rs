@@ -1,3 +1,4 @@
+use crate::servers::server_handle::ServerHandle;
 use crate::servers::server_info::ServerInfo;
 use anyhow::{anyhow, Context, Result};
 use log_buffer::LogBuffer;
@@ -14,7 +15,6 @@ use tracing::debug as line_log;
 #[cfg(not(debug_assertions))]
 use tracing::trace as line_log;
 use tracing::{error, info, info_span, warn, Instrument};
-use crate::servers::server_handle::ServerHandle;
 
 pub fn spawn_server(server_info: ServerInfo) -> Result<ServerHandle> {
     let (input_sender, input_receiver) = tokio::sync::mpsc::unbounded_channel::<String>();

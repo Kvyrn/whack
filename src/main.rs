@@ -23,6 +23,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 #[tokio::main]
 async fn main() -> Result<()> {
     setup_tracing()?;
+    info!("Starting whack v{}", VERSION);
 
     config::load_config().context("Error loading config!")?;
 

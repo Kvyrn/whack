@@ -7,15 +7,17 @@ use crate::servers::server_handle::ServerHandle;
 use anyhow::{bail, Result};
 use std::collections::HashMap;
 use tokio::sync::mpsc::UnboundedSender;
-use tokio::sync::oneshot::{Sender};
+use tokio::sync::oneshot::Sender;
 use tokio::sync::OnceCell;
 use tracing::{info_span, Instrument};
 use uuid::Uuid;
 
-static COMMAND_SENDER: OnceCell<UnboundedSender<(Sender<InteractionResult>, ServerCommand)>> = OnceCell::const_new();
+static COMMAND_SENDER: OnceCell<UnboundedSender<(Sender<InteractionResult>, ServerCommand)>> =
+    OnceCell::const_new();
 
 pub fn init() -> Result<()> {
-    let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel::<(Sender<InteractionResult>, ServerCommand)>();
+    let (sender, mut receiver) =
+        tokio::sync::mpsc::unbounded_channel::<(Sender<InteractionResult>, ServerCommand)>();
     COMMAND_SENDER.set(sender)?;
 
     tokio::spawn(async move {

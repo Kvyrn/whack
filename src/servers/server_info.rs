@@ -1,5 +1,5 @@
 use anyhow::Result;
-use uuid::{Uuid};
+use uuid::Uuid;
 
 #[allow(dead_code)]
 pub struct ServerInfo {

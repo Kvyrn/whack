@@ -12,9 +12,7 @@ pub struct WhackConfig {
 
 impl Default for WhackConfig {
     fn default() -> Self {
-        WhackConfig {
-            admin_gid: None
-        }
+        WhackConfig { admin_gid: None }
     }
 }
 

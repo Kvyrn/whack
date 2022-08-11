@@ -45,16 +45,13 @@ pub struct ServerCommand {
 
 impl ServerCommand {
     pub fn new(id: Uuid, interaction: ServerInteraction) -> Self {
-       ServerCommand {
-           id,
-           interaction
-       }
+        ServerCommand { id, interaction }
     }
 }
 
 #[derive(Debug, Clone)]
 pub enum InteractionResult {
-    Success
+    Success,
 }
 
 #[allow(dead_code)]

@@ -6,7 +6,7 @@ use crate::servers::command::{handle_server_command, InteractionResult, ServerCo
 use crate::servers::server_handle::ServerHandle;
 use anyhow::{bail, Result};
 use std::collections::HashMap;
-use tokio::sync::mpsc::UnboundedSender;
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot::Sender;
 use tokio::sync::OnceCell;
 use tracing::{info_span, Instrument};
@@ -16,21 +16,22 @@ static COMMAND_SENDER: OnceCell<UnboundedSender<(Sender<InteractionResult>, Serv
     OnceCell::const_new();
 
 pub fn init() -> Result<()> {
-    let (sender, mut receiver) =
+    let (sender, receiver) =
         tokio::sync::mpsc::unbounded_channel::<(Sender<InteractionResult>, ServerCommand)>();
     COMMAND_SENDER.set(sender)?;
-
-    tokio::spawn(async move {
-        let mut running_servers = HashMap::<Uuid, ServerHandle>::new();
-
-        while let Some((reply_sender, command)) = receiver.recv().await {
-            let span = info_span!("command", ?command);
-            handle_server_command(reply_sender, command, &mut running_servers)
-                .instrument(span)
-                .await;
-        }
-    });
+    tokio::spawn(run_servers(receiver));
     Ok(())
+}
+
+async fn run_servers(mut receiver: UnboundedReceiver<(Sender<InteractionResult>, ServerCommand)>) {
+    let mut running_servers = HashMap::<Uuid, ServerHandle>::new();
+
+    while let Some((reply_sender, command)) = receiver.recv().await {
+        let span = info_span!("command", ?command);
+        handle_server_command(reply_sender, command, &mut running_servers)
+            .instrument(span)
+            .await;
+    }
 }
 
 pub async fn run_command(command: ServerCommand) -> Result<InteractionResult> {

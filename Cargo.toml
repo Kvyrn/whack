@@ -6,16 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.58"
-tokio = { version = "1.19.2", features = ["full"] }
+anyhow = "1.0.61"
+tokio = { version = "1.20.1", features = ["full"] }
 parking_lot = "0.12.1"
 uuid = { version = "1.1.2", features = ["serde", "v4"] }
-serde = { version = "1.0.137", features = ["derive"] }
+serde = { version = "1.0.143", features = ["derive"] }
 shell-words = "1.1.0"
 yogurt = "0.3.1"
 log_buffer = "1.2.0"
 figment = { version = "0.10.6", features = ["toml", "env"] }
 
-tracing = "0.1.35"
-tracing-subscriber = { version = "0.3.11", features = ["parking_lot"] }
+tracing = "0.1.36"
+tracing-subscriber = { version = "0.3.15", features = ["parking_lot"] }
 #tracing-appender = "0.2.2"

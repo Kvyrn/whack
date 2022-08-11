@@ -10,7 +10,7 @@ use tracing::{error, info, Level};
 use tracing_subscriber::util::SubscriberInitExt;
 use uuid::{uuid, Uuid};
 
-use crate::servers::command::ServerCommand;
+use crate::servers::command::{ServerCommand, ServerInteraction};
 use crate::servers::server_info::ServerInfo;
 
 mod cli;
@@ -27,13 +27,12 @@ async fn main() -> Result<()> {
 
     config::load_config().context("Error loading config!")?;
 
-    servers::init().context("Error initialising servers!")?;
     cli::init().context("Error initialising cli!")?;
+    servers::init().context("Error initialising servers!")?;
 
-    let sender = servers::get_command_sender()?;
-    sender.send(ServerCommand::StartServer(uuid!(
-        "8d7d8cfd-5e77-4cbb-8108-0e36c7201f42"
-    )))?;
+    let test_uuid = uuid!("8d7d8cfd-5e77-4cbb-8108-0e36c7201f42");
+    let result = servers::run_command(ServerCommand::new(test_uuid, ServerInteraction::Start)).await;
+    info!("Command result: {:?}", result);
 
     let _handle = servers::processes::spawn_server(ServerInfo::new(
         Uuid::new_v4(),
@@ -48,6 +47,7 @@ async fn main() -> Result<()> {
         _ = sigint.recv() => {},
         _ = sigterm.recv() => {}
     };
+    info!("Cleaning up...");
 
     info!("Deleting socket file");
     if let Err(err) = std::fs::remove_file("/tmp/whack.sock") {

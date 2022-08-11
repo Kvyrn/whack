@@ -1,6 +1,7 @@
 use anyhow::Result;
-use uuid::{uuid, Uuid};
+use uuid::{Uuid};
 
+#[allow(dead_code)]
 pub struct ServerInfo {
     id: Uuid,
     name: String,
@@ -8,12 +9,8 @@ pub struct ServerInfo {
 }
 
 impl ServerInfo {
-    pub fn fetch(id: Uuid) -> Result<ServerInfo> {
-        Ok(ServerInfo {
-            id: uuid!("37e7a7c5-4d57-4b79-b10f-851f18b22d70"),
-            name: String::from("dgsdgf"),
-            exec_str: String::from("echo hello"),
-        })
+    pub fn fetch(_id: Uuid) -> Result<ServerInfo> {
+        todo!()
     }
 
     pub fn new(id: Uuid, name: String, exec_str: String) -> Self {

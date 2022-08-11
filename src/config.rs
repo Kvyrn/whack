@@ -1,5 +1,5 @@
 use crate::CONFIG;
-use anyhow::Result;
+use color_eyre::Result;
 use figment::providers::{Env, Format, Serialized, Toml};
 use figment::Figment;
 use serde::{Deserialize, Serialize};

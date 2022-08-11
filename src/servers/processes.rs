@@ -1,6 +1,7 @@
 use crate::servers::server_handle::ServerHandle;
 use crate::servers::server_info::ServerInfo;
-use anyhow::{anyhow, Context, Result};
+use color_eyre::eyre::{eyre, WrapErr};
+use color_eyre::Result;
 use log_buffer::LogBuffer;
 use parking_lot::Mutex;
 use std::fmt::Write;
@@ -40,28 +41,28 @@ async fn run_server(
     output_cache: Arc<Mutex<LogBuffer<Vec<u8>>>>,
 ) -> Result<()> {
     let args: Vec<_> =
-        shell_words::split(server_info.get_exec_str()).context("Invalid exec string")?;
-    let mut command = Command::new(args.first().ok_or_else(|| anyhow!("Invalid exec string"))?);
+        shell_words::split(server_info.get_exec_str()).wrap_err("Invalid exec string")?;
+    let mut command = Command::new(args.first().ok_or_else(|| eyre!("Invalid exec string"))?);
     command
         .args(&args[1..])
         .stderr(Stdio::piped())
         .stdout(Stdio::piped())
         .stdin(Stdio::piped());
 
-    let mut child = command.spawn().context("Error spawning child process")?;
+    let mut child = command.spawn().wrap_err("Error spawning child process")?;
 
     let stdout = child
         .stdout
         .take()
-        .ok_or_else(|| anyhow!("Missing child stdout!"))?;
+        .ok_or_else(|| eyre!("Missing child stdout!"))?;
     let stderr = child
         .stderr
         .take()
-        .ok_or_else(|| anyhow!("Missing child stderr!"))?;
+        .ok_or_else(|| eyre!("Missing child stderr!"))?;
     let stdin = child
         .stdin
         .take()
-        .ok_or_else(|| anyhow!("Missing child stdin!"))?;
+        .ok_or_else(|| eyre!("Missing child stdin!"))?;
     tokio::spawn(read_stdout(stdout, stderr, output_cache).in_current_span());
     tokio::spawn(write_stdin(stdin, input_receiver).in_current_span());
 

@@ -1,5 +1,6 @@
 use crate::cli::commands::create_dispatcher;
-use anyhow::{anyhow, Result};
+use color_eyre::eyre::eyre;
+use color_eyre::Result;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, Interest};
 use tokio::net::unix::UCred;
 use tokio::net::{UnixListener, UnixStream};
@@ -17,7 +18,7 @@ pub fn init() -> Result<()> {
 
     DISPATCHER
         .set(create_dispatcher()?)
-        .map_err(|_| anyhow!("Error setting dispatcher!"))?;
+        .map_err(|_| eyre!("Error setting dispatcher!"))?;
 
     let listener = UnixListener::bind("/tmp/whack.sock")?;
     info!("Opened socket at /tmp/whack.sock");
@@ -79,7 +80,7 @@ async fn handle_client(mut stream: UnixStream, peer_cred: UCred) -> Result<()> {
 
         let dispatcher = DISPATCHER
             .get()
-            .ok_or_else(|| anyhow!("Missing dispatcher!"))?;
+            .ok_or_else(|| eyre!("Missing dispatcher!"))?;
 
         let client_props: ClientProperties = peer_cred.into();
         let replies = dispatcher

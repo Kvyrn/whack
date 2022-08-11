@@ -1,4 +1,4 @@
-use anyhow::Result;
+use color_eyre::Result;
 use uuid::Uuid;
 
 #[allow(dead_code)]

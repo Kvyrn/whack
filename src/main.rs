@@ -2,7 +2,8 @@
 #![allow(clippy::redundant_field_names)]
 
 use crate::config::WhackConfig;
-use anyhow::{Context, Result};
+use color_eyre::eyre::WrapErr;
+use color_eyre::Result;
 use tokio::select;
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::OnceCell;
@@ -22,13 +23,14 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    color_eyre::install()?;
     setup_tracing()?;
     info!("Starting whack v{}", VERSION);
 
-    config::load_config().context("Error loading config!")?;
+    config::load_config().wrap_err("Error loading config!")?;
 
-    cli::init().context("Error initialising cli!")?;
-    servers::init().context("Error initialising servers!")?;
+    cli::init().wrap_err("Error initialising cli!")?;
+    servers::init().wrap_err("Error initialising servers!")?;
 
     let test_uuid = uuid!("8d7d8cfd-5e77-4cbb-8108-0e36c7201f42");
     let result =
